@@ -67,7 +67,7 @@ class AuthorizationForm:
             if not correct:
                 raise Exception("Login or password are incorrect")
 
-            CRUDForm(self.__root, None, None)
+            CRUDForm(self.__root, self.__connection, self.__cursor)
             self.__root.withdraw()
         except Exception as e:
             messagebox.showinfo("Exception", e)
