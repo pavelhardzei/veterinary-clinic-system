@@ -1,5 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter import font as tkfont
+from tkinter import messagebox
 import psycopg2
 
 
@@ -9,10 +11,14 @@ class CRUDForm:
         self.__connection = connection
         self.__cursor = cursor
 
+        self.__textvariables: list[tk.StringVar] = []
+        self.__current_table: str = ""
+
         self.__crud_form = tk.Toplevel(root)
         self.__crud_form.title("CRUD Form")
-        self.__width = 600
-        self.__height = 400
+        self.__crud_form.resizable(False, False)
+        self.__width = 650
+        self.__height = 500
         self.__crud_form.wm_minsize(self.__width, self.__height)
         self.__crud_form.geometry("+{}+{}".
                                   format(int(self.__crud_form.winfo_screenwidth() / 2 - self.__width / 2),
@@ -57,26 +63,34 @@ class CRUDForm:
 
         self.__table_frame.grid(row=1, column=0, pady=30)
 
+        self.__crud_frame = tk.Frame(master=self.__root_frame)
+
+        self.__crud_frame.grid(row=2, column=0)
+
         self.__root_frame.pack()
 
     def __open_appointments(self):
         self.__create_table(("id", "client_id", "pet_id", "date", "time"))
-        self.__cursor.execute("SELECT * FROM appointments;")
+        self.__current_table = "appointments"
+        self.__cursor.execute("SELECT * FROM {};".format(self.__current_table))
         self.__fill_table(self.__cursor.fetchall())
 
     def __open_clients(self):
-        self.__create_table(("id", "name", "telephone", "pet_id"))
-        self.__cursor.execute("SELECT * FROM clients;")
+        self.__create_table(("id", "name", "telephone"))
+        self.__current_table = "clients"
+        self.__cursor.execute("SELECT * FROM {};".format(self.__current_table))
         self.__fill_table(self.__cursor.fetchall())
 
     def __open_patients(self):
         self.__create_table(("id", "name", "age", "owner_id", "kind"))
-        self.__cursor.execute("SELECT * FROM patients;")
+        self.__current_table = "patients"
+        self.__cursor.execute("SELECT * FROM {};".format(self.__current_table))
         self.__fill_table(self.__cursor.fetchall())
 
     def __open_doctors(self):
         self.__create_table(("id", "name", "salary"))
-        self.__cursor.execute("SELECT * FROM doctors;")
+        self.__current_table = "doctors"
+        self.__cursor.execute("SELECT * FROM {};".format(self.__current_table))
         self.__fill_table(self.__cursor.fetchall())
 
     def __create_table(self, columns):
@@ -85,9 +99,25 @@ class CRUDForm:
         self.__table['columns'] = columns
         self.__table.column("#0", width=0, stretch=tk.NO)
         self.__table.heading("#0", text='')
+
+        for widgets in self.__crud_frame.winfo_children():
+            widgets.destroy()
+        self.__textvariables.clear()
+
         for column in columns:
             self.__table.column(column, anchor=tk.CENTER, width=int(0.9 * self.__width / len(columns)))
             self.__table.heading(column, text=column, anchor=tk.CENTER)
+
+        font = tkfont.Font(family="Times", size=14)
+        size = int(self.__width * 0.85) // (font.measure("0") * len(columns))
+        for i in range(1, len(columns)):
+            tk.Label(master=self.__crud_frame, text=columns[i], font=font).grid(row=0, column=i-1)
+            self.__textvariables.append(tk.StringVar())
+            tk.Entry(master=self.__crud_frame, textvariable=self.__textvariables[-1], font=font, width=size) \
+                .grid(row=1, column=i-1)
+
+        tk.Button(master=self.__crud_frame, text="Add", background="#555", foreground="#ccc",
+                  font="Times 11", width=size, command=self.__add_record).grid(row=1, column=len(columns), padx=20)
 
         self.__table.grid(row=0, column=0)
         self.__scrollbar.config(command=self.__table.yview)
@@ -98,3 +128,20 @@ class CRUDForm:
         for record in records:
             self.__table.insert(parent='', index='end', iid=index, text='', values=record)
             index += 1
+
+    def __add_record(self):
+        try:
+            record = tuple(map(lambda x: x.get().strip(), self.__textvariables))
+            if '' in record:
+                raise Exception("Fields cannot be empty")
+
+            for textvariable in self.__textvariables:
+                textvariable.set("")
+
+            size = len(self.__table.get_children(''))
+            self.__table.insert(parent='', index='end', iid=size, text='', values=(size + 1, *record))
+
+            self.__cursor.execute("INSERT INTO {} VALUES %s;".format(self.__current_table), ((size + 1, *record), ))
+            self.__connection.commit()
+        except Exception as e:
+            messagebox.showinfo("Exception", e)
