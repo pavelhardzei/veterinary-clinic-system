@@ -5,7 +5,7 @@ import psycopg2
 
 class CRUDForm:
 
-    def __init__(self, root: tk.Tk, connection, cursor):
+    def __init__(self, root: tk.Tk, connection: psycopg2._psycopg.connection, cursor: psycopg2._psycopg.cursor):
         self.__connection = connection
         self.__cursor = cursor
 
@@ -52,7 +52,7 @@ class CRUDForm:
         self.__table.grid(row=0, column=0)
 
         self.__scrollbar = ttk.Scrollbar(master=self.__table_frame, orient=tk.VERTICAL, command=self.__table.yview)
-        self.__table.configure(yscroll=self.__scrollbar.set)
+        self.__table.config(yscrollcommand=self.__scrollbar.set)
         self.__scrollbar.grid(row=0, column=1, sticky="ns")
 
         self.__table_frame.grid(row=1, column=0, pady=30)
@@ -61,15 +61,23 @@ class CRUDForm:
 
     def __open_appointments(self):
         self.__create_table(("id", "client_id", "pet_id", "date", "time"))
+        self.__cursor.execute("SELECT * FROM appointments;")
+        self.__fill_table(self.__cursor.fetchall())
 
     def __open_clients(self):
         self.__create_table(("id", "name", "telephone", "pet_id"))
+        self.__cursor.execute("SELECT * FROM clients;")
+        self.__fill_table(self.__cursor.fetchall())
 
     def __open_patients(self):
         self.__create_table(("id", "name", "age", "owner_id", "kind"))
+        self.__cursor.execute("SELECT * FROM patients;")
+        self.__fill_table(self.__cursor.fetchall())
 
     def __open_doctors(self):
         self.__create_table(("id", "name", "salary"))
+        self.__cursor.execute("SELECT * FROM doctors;")
+        self.__fill_table(self.__cursor.fetchall())
 
     def __create_table(self, columns):
         self.__table.destroy()
@@ -80,7 +88,13 @@ class CRUDForm:
         for column in columns:
             self.__table.column(column, anchor=tk.CENTER, width=int(0.9 * self.__width / len(columns)))
             self.__table.heading(column, text=column, anchor=tk.CENTER)
-        self.__table.grid(row=0, column=0)
 
-    def __fill_table(self):
-        pass
+        self.__table.grid(row=0, column=0)
+        self.__scrollbar.config(command=self.__table.yview)
+        self.__table.config(yscrollcommand=self.__scrollbar.set)
+
+    def __fill_table(self, records: list[tuple]):
+        index = 0
+        for record in records:
+            self.__table.insert(parent='', index='end', iid=index, text='', values=record)
+            index += 1
