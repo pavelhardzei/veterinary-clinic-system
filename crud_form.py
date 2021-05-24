@@ -143,11 +143,23 @@ class CRUDForm:
             for textvariable in self.__textvariables:
                 textvariable.set("")
 
-            size = len(self.__table.get_children())
-            self.__table.insert(parent='', index='end', iid=size + 1, text='', values=(size + 1, *record))
+            self.__cursor.execute("Select * FROM {} LIMIT 0;".format(self.__current_table))
+            columns = [desc[0] for desc in self.__cursor.description]
+            columns.pop(0)
 
-            self.__cursor.execute("INSERT INTO {} VALUES %s;".format(self.__current_table), ((size + 1, *record), ))
+            columns_list = "("
+            for col in columns:
+                columns_list += col + ", "
+            columns_list = columns_list[:-2]
+            columns_list += ")"
+
+            self.__cursor.execute("INSERT INTO {}{} VALUES %s;".format(self.__current_table,
+                                   columns_list), ((record, )))
             self.__connection.commit()
+
+            self.__cursor.execute("SELECT * FROM {} ORDER BY id DESC LIMIT 1".format(self.__current_table))
+            record = self.__cursor.fetchall()[0]
+            self.__table.insert(parent='', index='end', iid=record[0], text='', values=record)
         except Exception as e:
             messagebox.showinfo("Exception", e)
 
