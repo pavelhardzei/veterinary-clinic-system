@@ -77,7 +77,7 @@ class CRUDForm:
         self.__root_frame.pack()
 
     def __open_appointments(self):
-        self.__create_table(("id", "client_id", "pet_id", "date", "time"))
+        self.__create_table(("id", "client_id", "pet_id", "date", "time", "doctor_id"))
         self.__current_table = "appointments"
         self.__cursor.execute("SELECT * FROM {};".format(self.__current_table))
         self.__fill_table(self.__cursor.fetchall())
@@ -162,6 +162,7 @@ class CRUDForm:
             self.__table.insert(parent='', index='end', iid=record[0], text='', values=record)
         except Exception as e:
             messagebox.showinfo("Exception", e)
+            self.__connection.rollback()
 
     def __remove_all(self):
         if len(self.__table.get_children()) == 0:
