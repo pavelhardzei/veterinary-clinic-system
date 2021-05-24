@@ -49,6 +49,9 @@ class CRUDForm:
                               command=self.__open_doctors)
         __doctors.grid(row=1, column=3, padx=10)
 
+        self.__table_lbl = tk.Label(master=self.__headline_frame, text="", font="Times 16")
+        self.__table_lbl.grid(row=2, column=0, columnspan=4, pady=10)
+
         self.__headline_frame.grid(row=0, column=0)
 
         self.__table_frame = tk.Frame(master=self.__root_frame)
@@ -61,7 +64,7 @@ class CRUDForm:
         self.__table.config(yscrollcommand=self.__scrollbar.set)
         self.__scrollbar.grid(row=0, column=1, sticky="ns")
 
-        self.__table_frame.grid(row=1, column=0, pady=30)
+        self.__table_frame.grid(row=1, column=0, pady=10)
 
         self.__crud_frame = tk.Frame(master=self.__root_frame)
 
@@ -84,27 +87,28 @@ class CRUDForm:
 
     def __open_appointments(self):
         self.__create_table(("id", "client_id", "pet_id", "date", "time", "doctor_id"))
-        self.__current_table = "appointments"
-        self.__cursor.execute("SELECT * FROM {};".format(self.__current_table))
-        self.__fill_table(self.__cursor.fetchall())
+        self.__fill_table("appointments")
 
     def __open_clients(self):
         self.__create_table(("id", "name", "telephone"))
-        self.__current_table = "clients"
-        self.__cursor.execute("SELECT * FROM {};".format(self.__current_table))
-        self.__fill_table(self.__cursor.fetchall())
+        self.__fill_table("clients")
 
     def __open_patients(self):
         self.__create_table(("id", "name", "age", "owner_id", "kind"))
-        self.__current_table = "patients"
-        self.__cursor.execute("SELECT * FROM {};".format(self.__current_table))
-        self.__fill_table(self.__cursor.fetchall())
+        self.__fill_table("patients")
 
     def __open_doctors(self):
         self.__create_table(("id", "name", "salary"))
-        self.__current_table = "doctors"
+        self.__fill_table("doctors")
+
+    def __fill_table(self, table: str):
+        self.__current_table = table
+        self.__table_lbl.config(text=self.__current_table.title())
         self.__cursor.execute("SELECT * FROM {};".format(self.__current_table))
-        self.__fill_table(self.__cursor.fetchall())
+        records = self.__cursor.fetchall()
+
+        for record in records:
+            self.__table.insert(parent='', index='end', iid=record[0], text='', values=record)
 
     def __create_table(self, columns):
         self.__table.destroy()
@@ -135,10 +139,6 @@ class CRUDForm:
         self.__table.grid(row=0, column=0)
         self.__scrollbar.config(command=self.__table.yview)
         self.__table.config(yscrollcommand=self.__scrollbar.set)
-
-    def __fill_table(self, records: list[tuple]):
-        for record in records:
-            self.__table.insert(parent='', index='end', iid=record[0], text='', values=record)
 
     def __add_record(self):
         try:
