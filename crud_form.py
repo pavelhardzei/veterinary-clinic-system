@@ -76,6 +76,12 @@ class CRUDForm:
 
         self.__root_frame.pack()
 
+        menu = tk.Menu()
+        file_menu = tk.Menu(tearoff=0)
+        file_menu.add_command(label="Exit", command=lambda: root.destroy())
+        menu.add_cascade(label="File", menu=file_menu)
+        self.__crud_form.config(menu=menu)
+
     def __open_appointments(self):
         self.__create_table(("id", "client_id", "pet_id", "date", "time", "doctor_id"))
         self.__current_table = "appointments"
