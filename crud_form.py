@@ -18,7 +18,7 @@ class CRUDForm:
         self.__crud_form.title("CRUD Form")
         self.__crud_form.resizable(False, False)
         self.__width = 650
-        self.__height = 500
+        self.__height = 550
         self.__crud_form.wm_minsize(self.__width, self.__height)
         self.__crud_form.geometry("+{}+{}".
                                   format(int(self.__crud_form.winfo_screenwidth() / 2 - self.__width / 2),
@@ -66,6 +66,13 @@ class CRUDForm:
         self.__crud_frame = tk.Frame(master=self.__root_frame)
 
         self.__crud_frame.grid(row=2, column=0)
+
+        self.__remove_frame = tk.Frame(master=self.__root_frame)
+        tk.Button(master=self.__remove_frame, text="Remove All", background="#555", foreground="#ccc",
+                  font="Times 11", command=self.__remove_all).grid(row=0, column=0, padx=int(self.__width * 0.15))
+        tk.Button(master=self.__remove_frame, text="Remove Selected", background="#555", foreground="#ccc",
+                  font="Times 11", command=self.__remove_selected).grid(row=0, column=1, padx=int(self.__width * 0.15))
+        self.__remove_frame.grid(row=3, column=0, pady=30)
 
         self.__root_frame.pack()
 
@@ -124,10 +131,8 @@ class CRUDForm:
         self.__table.config(yscrollcommand=self.__scrollbar.set)
 
     def __fill_table(self, records: list[tuple]):
-        index = 0
         for record in records:
-            self.__table.insert(parent='', index='end', iid=index, text='', values=record)
-            index += 1
+            self.__table.insert(parent='', index='end', iid=record[0], text='', values=record)
 
     def __add_record(self):
         try:
@@ -138,10 +143,33 @@ class CRUDForm:
             for textvariable in self.__textvariables:
                 textvariable.set("")
 
-            size = len(self.__table.get_children(''))
-            self.__table.insert(parent='', index='end', iid=size, text='', values=(size + 1, *record))
+            size = len(self.__table.get_children())
+            self.__table.insert(parent='', index='end', iid=size + 1, text='', values=(size + 1, *record))
 
             self.__cursor.execute("INSERT INTO {} VALUES %s;".format(self.__current_table), ((size + 1, *record), ))
             self.__connection.commit()
         except Exception as e:
             messagebox.showinfo("Exception", e)
+
+    def __remove_all(self):
+        if len(self.__table.get_children()) == 0:
+            messagebox.showinfo("", "Table is empty")
+            return
+
+        for record in self.__table.get_children():
+            self.__table.delete(record)
+
+        self.__cursor.execute("DELETE FROM {};".format(self.__current_table))
+        self.__connection.commit()
+
+    def __remove_selected(self):
+        if len(self.__table.get_children()) == 0:
+            messagebox.showinfo("", "Table is empty")
+            return
+
+        records = self.__table.selection()
+        for record in records:
+            self.__table.delete(record)
+
+        self.__cursor.execute("DELETE FROM {} WHERE id IN %s;".format(self.__current_table), ((records, )))
+        self.__connection.commit()
