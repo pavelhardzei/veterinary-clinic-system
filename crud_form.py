@@ -142,7 +142,7 @@ class CRUDForm:
 
     def __add_record(self):
         try:
-            record = tuple(map(lambda x: x.get().strip(), self.__textvariables))
+            record: tuple = tuple(map(lambda x: x.get().strip(), self.__textvariables))
             if '' in record:
                 raise Exception("Fields cannot be empty")
 
@@ -160,7 +160,7 @@ class CRUDForm:
             columns_list += ")"
 
             self.__cursor.execute("INSERT INTO {}{} VALUES %s;".format(self.__current_table,
-                                   columns_list), ((record, )))
+                                   columns_list), (record, ))
             self.__connection.commit()
 
             self.__cursor.execute("SELECT * FROM {} ORDER BY id DESC LIMIT 1".format(self.__current_table))
@@ -186,9 +186,9 @@ class CRUDForm:
             messagebox.showinfo("", "Table is empty")
             return
 
-        records = self.__table.selection()
+        records: tuple = self.__table.selection()
         for record in records:
             self.__table.delete(record)
 
-        self.__cursor.execute("DELETE FROM {} WHERE id IN %s;".format(self.__current_table), ((records, )))
+        self.__cursor.execute("DELETE FROM {} WHERE id IN %s;".format(self.__current_table), (records, ))
         self.__connection.commit()
