@@ -55,16 +55,10 @@ class AuthorizationForm:
             self.__cursor.execute("SELECT password FROM users WHERE login=%s;", [self.__login_message.get().strip()])
 
             records = self.__cursor.fetchall()
-            if len(records) < 0:
-                raise Exception("Login or password are incorrect")
+            if len(records) == 0:
+                raise Exception("Login is incorrect")
 
-            correct = False
-            for password in records:
-                if password[0] == self.__password_message.get().strip():
-                    correct = True
-                    break
-
-            if not correct:
+            if records[0][0] != self.__password_message.get().strip():
                 raise Exception("Login or password are incorrect")
 
             CRUDForm(self.__root, self.__connection, self.__cursor)

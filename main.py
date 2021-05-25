@@ -2,7 +2,7 @@ from authorization_form import AuthorizationForm
 
 
 def main():
-    a = AuthorizationForm()
+    AuthorizationForm()
 
 
 if __name__ == "__main__":
